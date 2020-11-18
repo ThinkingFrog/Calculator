@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <vector>
 #include <deque>
@@ -5,6 +6,7 @@
 #include "parsing.h"
 #include "BaseOperation.h"
 
+// split string by given delimeter
 std::vector<std::string> split(const std::string &str, const std::string &delimeter) {
     size_t start = 0;
     size_t end = str.find(delimeter);
@@ -27,17 +29,23 @@ std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, 
     std::deque<std::string> stack;
 
     for (std::string token : expr) {
-        if (stringIsDigit(token) || 
-        (operations.find(token) != operations.end() && operations.at(token)->get_type() == BaseOperation::op_type::postfix)) {
-            polish.push_back(token);
-            continue;
-        }
+        bool token_is_operation = operations.find(token) != operations.end();
+        bool token_is_postfix = operations.at(token)->get_type() == BaseOperation::op_type::postfix;
+        bool token_is_prefix = operations.at(token)->get_type() == BaseOperation::op_type::prefix;
+        bool token_is_binary = operations.at(token)->get_type() == BaseOperation::op_type::binary;
+        bool stack_top_is_operation = operations.find(stack.front()) != operations.end();
+        bool stack_top_is_prefix = operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix;
+        bool stack_prior_not_lower_than_token = operations.at(stack.front())->priority() >= operations.at(token)->priority();
 
-        if ((operations.find(token) != operations.end() && operations.at(token)->get_type() == BaseOperation::op_type::prefix)
-        || token == "(") {
-            stack.push_front(token);
-            continue;
+        if (stringIsDigit(token) || (token_is_operation && token_is_postfix)) {
+            polish.push_back(token);
         }
+        else
+
+        if ((token_is_operation && token_is_prefix) || token == "(") {
+            stack.push_front(token);
+        }
+        else
 
         if (token == ")") {
             if (!stack.empty())
@@ -46,20 +54,22 @@ std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, 
                     stack.pop_front();
                 }
             stack.pop_front();
-            continue;
         }
+        else
 
-        if (operations.find(token) != operations.end() && operations.at(token)->get_type() == BaseOperation::op_type::binary) {
+        if (token_is_operation && token_is_binary) {
             if (!stack.empty()) {
-                while (!stack.empty() && operations.find(stack.front()) != operations.end() && operations.find(token) != operations.end() &&
-                (operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix ||
-                operations.at(stack.front())->priority() >= operations.at(token)->priority())) {
+                while (!stack.empty() && stack_top_is_operation && token_is_operation && (stack_top_is_prefix || stack_prior_not_lower_than_token)) {
                     polish.push_back(stack.front());
                     stack.pop_front(); 
                 }
             }
             stack.push_front(token);
-            continue;
+        }
+        
+        else {
+            std::cout << "Unknown block in input string" << std::endl;
+            break;
         }
     }
 
@@ -70,20 +80,25 @@ std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, 
 }
 
 double calculate(std::vector<std::string> polish, const std::map<std::string, BaseOperation*> &operations) {
+    // count and erase elements of polish notation array until there is only one left
     while (polish.size() != 1) {
         unsigned i;
+        // find index of first operation
         for (i = 0; i < polish.size(); ++i)
             if (!stringIsDigit(polish[i]))
                 break;
 
+        // determine operation
         BaseOperation* op = operations.at(polish[i]);
 
+        // if binary operation, count with 2 operands
         if (op->get_type() == BaseOperation::op_type::binary) {
             double res = op->calculate({std::stod(polish[i - 2]), std::stod(polish[i - 1])});
             polish[i - 2] = std::to_string(res);
             polish.erase(polish.begin() + i - 1);
             polish.erase(polish.begin() + i - 1);
         }
+        // if unary, count with 1 operand
         else {
             double res = op->calculate({std::stod(polish[i - 1])});
             polish[i - 1] = std::to_string(res);
@@ -93,6 +108,7 @@ double calculate(std::vector<std::string> polish, const std::map<std::string, Ba
     return std::stod(polish.front());
 }
 
+// determine if string is positive, floating or negative number
 bool stringIsDigit(const std::string &str) {
     if (str.empty())
         return false;

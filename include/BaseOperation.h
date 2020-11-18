@@ -26,7 +26,11 @@ public:
 
     virtual double calculate(std::vector<double> nums) = 0;
 protected:
+    // string representation
     std::string str;
+    // type of operation coresponding to base class it's derived from
     op_type type;
+    // level of priority for binary operations
+    // 1 level is the lowest
     unsigned short prior_lvl;
 };

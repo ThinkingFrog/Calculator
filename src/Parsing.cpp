@@ -30,19 +30,19 @@ std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, 
 
     for (std::string token : expr) {
         bool token_is_operation = operations.find(token) != operations.end();
-        bool token_is_postfix = operations.at(token)->get_type() == BaseOperation::op_type::postfix;
-        bool token_is_prefix = operations.at(token)->get_type() == BaseOperation::op_type::prefix;
-        bool token_is_binary = operations.at(token)->get_type() == BaseOperation::op_type::binary;
-        bool stack_top_is_operation = operations.find(stack.front()) != operations.end();
-        bool stack_top_is_prefix = operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix;
-        bool stack_prior_not_lower_than_token = operations.at(stack.front())->priority() >= operations.at(token)->priority();
+        bool token_is_postfix = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::postfix;
+        bool token_is_prefix = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::prefix;
+        bool token_is_binary = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::binary;
+        bool stack_top_is_operation = !stack.empty() && operations.find(stack.front()) != operations.end();
+        bool stack_top_is_prefix = stack_top_is_operation && operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix;
+        bool stack_prior_not_lower_than_token = stack_top_is_operation && token_is_operation && operations.at(stack.front())->priority() >= operations.at(token)->priority();
 
-        if (stringIsDigit(token) || (token_is_operation && token_is_postfix)) {
+        if (stringIsDigit(token) || token_is_postfix) {
             polish.push_back(token);
         }
         else
 
-        if ((token_is_operation && token_is_prefix) || token == "(") {
+        if (token_is_prefix || token == "(") {
             stack.push_front(token);
         }
         else
@@ -58,11 +58,9 @@ std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, 
         else
 
         if (token_is_operation && token_is_binary) {
-            if (!stack.empty()) {
-                while (!stack.empty() && stack_top_is_operation && token_is_operation && (stack_top_is_prefix || stack_prior_not_lower_than_token)) {
-                    polish.push_back(stack.front());
-                    stack.pop_front(); 
-                }
+            while (!stack.empty() && (stack_top_is_prefix || stack_prior_not_lower_than_token)) {
+                polish.push_back(stack.front());
+                stack.pop_front(); 
             }
             stack.push_front(token);
         }

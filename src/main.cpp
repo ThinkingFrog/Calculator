@@ -18,16 +18,17 @@ int main() {
     std::map<std::string, BaseOperation*> operations = {{add->to_str(), add}, {mult->to_str(), mult}};
     std::vector<HMODULE> libraries;
 
-    std::string plugins_dir = "../../plugins";
-    for (auto plugin : fs::directory_iterator(plugins_dir)) {
-        HMODULE lib = LoadLibraryA(plugin.path().string().c_str());
-        LOADER loader = (LOADER)GetProcAddress(lib, "LoadOperation");
-        
-        BaseOperation* op = loader();
-        operations[op->to_str()] = op;
-        
-        libraries.push_back(lib);
-    }
+    fs::path plugins_dir("../../plugins");
+    if (fs::exists(plugins_dir))
+        for (auto plugin : fs::directory_iterator(plugins_dir)) {
+            HMODULE lib = LoadLibraryA(plugin.path().string().c_str());
+            LOADER loader = (LOADER)GetProcAddress(lib, "LoadOperation");
+            
+            BaseOperation* op = loader();
+            operations[op->to_str()] = op;
+            
+            libraries.push_back(lib);
+        }
 
     std::string expression;
     std::cout << "Input expression as single line:" << std::endl;

@@ -1,9 +1,10 @@
 #include <vector>
-#include "BinaryOperation.h"
+#include "BaseOperation.h"
 
-class Addition : public BinaryOperation {
+class Addition : public BaseOperation {
 public:
     Addition() {
+        type = op_type::binary;
         prior_lvl = 1;
         str = "+";
     }

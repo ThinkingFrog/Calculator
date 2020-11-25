@@ -1,10 +1,11 @@
 #include <vector>
 #include <cmath>
-#include "../include/BinaryOperation.h"
+#include "../include/BaseOperation.h"
 
-class Power : public BinaryOperation {
+class Power : public BaseOperation {
 public:
     Power() {
+        type = op_type::binary;
         prior_lvl = 3;
         str = "^";
     }

@@ -1,10 +1,11 @@
 #include <vector>
 #include <cmath>
-#include "../include/PrefixOperation.h"
+#include "../include/BaseOperation.h"
 
-class Cosinus : public PrefixOperation {
+class Cosinus : public BaseOperation {
 public:
     Cosinus() {
+        type = op_type::prefix;
         str = "cos";
     }
     ~Cosinus() = default;

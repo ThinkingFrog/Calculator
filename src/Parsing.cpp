@@ -2,9 +2,9 @@
 #include <string>
 #include <vector>
 #include <deque>
-#include <map>
 #include "parsing.h"
 #include "BaseOperation.h"
+#include "Context.h"
 
 // split string by given delimeter
 std::vector<std::string> split(const std::string &str, const std::string &delimeter) {
@@ -24,90 +24,59 @@ std::vector<std::string> split(const std::string &str, const std::string &delime
     return splitted;
 }
 
-std::vector<std::string> toPolishNotation(const std::vector<std::string> &expr, const std::map<std::string, BaseOperation*> &operations) {
-    std::vector<std::string> polish;
-    std::deque<std::string> stack;
+// convert splitted string to polish notation to be fittable to calculations
+int toPolishNotation(Context &context) {
+    // iterate over splitted string
+    for (std::string token : context.splitted) {
+        // update context booleans used to make decisions while converting
+        context.refresh_booleans(token);
 
-    for (std::string token : expr) {
-        bool token_is_operation = operations.find(token) != operations.end();
-        bool token_is_postfix = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::postfix;
-        bool token_is_prefix = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::prefix;
-        bool token_is_binary = token_is_operation && operations.at(token)->get_type() == BaseOperation::op_type::binary;
-        bool stack_top_is_operation = !stack.empty() && operations.find(stack.front()) != operations.end();
-        bool stack_top_is_prefix = stack_top_is_operation && operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix;
-        bool stack_prior_not_lower_than_token = stack_top_is_operation && token_is_operation && operations.at(stack.front())->priority() >= operations.at(token)->priority();
-
-        if (stringIsDigit(token) || token_is_postfix) {
-            polish.push_back(token);
+        // if token is a number or a postfix operation - push it to output array
+        if (stringIsDigit(token) || context.token_is_postfix) {
+            context.polish.push_back(token);
         }
         else
 
-        if (token_is_prefix || token == "(") {
-            stack.push_front(token);
+        // if token is a prefix operation or an opening bracket - push it to stack
+        if (context.token_is_prefix || token == "(") {
+            context.stack.push_front(token);
         }
         else
 
+        // if token is closing bracket - empty stack until we find corresponding opening bracket
         if (token == ")") {
-            if (!stack.empty())
-                while (stack.front() != "(") {
-                    polish.push_back(stack.front());
-                    stack.pop_front();
+            if (!context.stack.empty())
+                while (context.stack.front() != "(") {
+                    context.polish.push_back(context.stack.front());
+                    context.stack.pop_front();
                 }
-            stack.pop_front();
+            context.stack.pop_front();
         }
         else
 
-        if (token_is_operation && token_is_binary) {
-            while (stack_top_is_prefix || stack_prior_not_lower_than_token) {
-                polish.push_back(stack.front());
-                stack.pop_front(); 
-
-                stack_top_is_operation = !stack.empty() && operations.find(stack.front()) != operations.end();
-                stack_top_is_prefix = stack_top_is_operation && operations.at(stack.front())->get_type() == BaseOperation::op_type::prefix;
-                stack_prior_not_lower_than_token = stack_top_is_operation && token_is_operation && operations.at(stack.front())->priority() >= operations.at(token)->priority();
+        // if token is a binary operation - empty stack while it's top is a prefix operation or a binary with higher priority
+        if (context.token_is_operation && context.token_is_binary) {
+            while (context.stack_top_is_prefix || context.stack_prior_not_lower_than_token) {
+                context.polish.push_back(context.stack.front());
+                context.stack.pop_front(); 
+                context.refresh_booleans(token);
             }
-            stack.push_front(token);
+            context.stack.push_front(token);
         }
         
+        // if token fits none of the above statements - consider it an error
         else {
             std::cout << "Unknown block in input string" << std::endl;
-            break;
+            return 1;
         }
     }
 
-    for (std::string op : stack)
-        polish.push_back(op);
-
-    return polish;
-}
-
-double calculate(std::vector<std::string> polish, const std::map<std::string, BaseOperation*> &operations) {
-    // count and erase elements of polish notation array until there is only one left
-    while (polish.size() != 1) {
-        unsigned i;
-        // find index of first operation
-        for (i = 0; i < polish.size(); ++i)
-            if (!stringIsDigit(polish[i]))
-                break;
-
-        // determine operation
-        BaseOperation* op = operations.at(polish[i]);
-
-        // if binary operation, count with 2 operands
-        if (op->get_type() == BaseOperation::op_type::binary) {
-            double res = op->calculate({std::stod(polish[i - 2]), std::stod(polish[i - 1])});
-            polish[i - 2] = std::to_string(res);
-            polish.erase(polish.begin() + i - 1);
-            polish.erase(polish.begin() + i - 1);
-        }
-        // if unary, count with 1 operand
-        else {
-            double res = op->calculate({std::stod(polish[i - 1])});
-            polish[i - 1] = std::to_string(res);
-            polish.erase(polish.begin() + i);
-        }
-    }
-    return std::stod(polish.front());
+    // empty stack at the end
+    for (std::string op : context.stack)
+        context.polish.push_back(op);
+    context.stack.clear();
+    
+    return 0;
 }
 
 // determine if string is positive, floating or negative number

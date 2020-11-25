@@ -1,9 +1,10 @@
 #include <vector>
-#include "../include/BinaryOperation.h"
+#include "../include/BaseOperation.h"
 
-class Substraction : public BinaryOperation {
+class Substraction : public BaseOperation {
 public:
     Substraction() {
+        type = op_type::binary;
         prior_lvl = 1;
         str = "-";
     }

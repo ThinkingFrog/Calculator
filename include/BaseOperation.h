@@ -16,8 +16,14 @@ public:
         return str;
     }
 
-    op_type get_type() {
-        return type;
+    bool is_postfix() {
+        return type == op_type::postfix;
+    }
+    bool is_prefix() {
+        return type == op_type::prefix;
+    }
+    bool is_binary() {
+        return type == op_type::binary;
     }
 
     unsigned short priority() {

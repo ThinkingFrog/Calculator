@@ -1,9 +1,10 @@
 #include <vector>
-#include "../include/BinaryOperation.h"
+#include "../include/BaseOperation.h"
 
-class Division : public BinaryOperation {
+class Division : public BaseOperation {
 public:
     Division() {
+        type = op_type::binary;
         prior_lvl = 2;
         str = "/";
     }

@@ -1,10 +1,11 @@
 #include <vector>
 #include <cmath>
-#include "../include/PostfixOperation.h"
+#include "../include/BaseOperation.h"
 
-class Factorial : public PostfixOperation {
+class Factorial : public BaseOperation {
 public:
     Factorial() {
+        type = op_type::postfix;
         str = "!";
     }
     ~Factorial() = default;
